@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
 import model.Cat;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
@@ -17,45 +18,70 @@ import static org.junit.jupiter.api.Assertions.*;
 public class WorkingWithFilesTest {
     private ClassLoader cl = WorkingWithFilesTest.class.getClassLoader();
 
+    @DisplayName("Проверка pdf в zip")
     @Test
-    void zipFileParsingTest() throws Exception {
+    void pdfInZipFileParsingTest() throws Exception {
         try (ZipInputStream zis = new ZipInputStream(
                 cl.getResourceAsStream("archive.zip")
         )) {
             ZipEntry entry;
 
             while ((entry = zis.getNextEntry()) != null) {
-                switch (entry.getName()) {
-                    case "archive/Presentation.pdf" -> {
+                if (entry.getName() == "archive/Presentation.pdf") {
                         PDF pdf = new PDF(zis);
                         assertEquals("Keynote", pdf.creator);
                         assertEquals(7, pdf.numberOfPages);
                         assertEquals("Presentation 5", pdf.title);
-                    }
-                    case "archive/продуктовые запасы.xlsx" -> {
-                        XLS xls = new XLS(zis);
-                        String actualValue = xls.excel.getSheetAt(0).getRow(7).getCell(5).getStringCellValue();
-                        assertTrue(actualValue.contains("Уксусы и соусы"));
-                    }
-                    case "archive/Книга1.csv" -> {
-                        CSVReader csvReader = new CSVReader(new InputStreamReader(zis));
-                        List<String[]> data = csvReader.readAll();
-                        assertEquals(2, data.size());
-                        Assertions.assertArrayEquals(
-                                new String[]{"42-44", " 280р"}, //не обрезает всякие пробелы
-                                data.get(0)
-                        );
-                        Assertions.assertArrayEquals(
-                                new String[]{"44-46", " 320р"},
-                                data.get(1)
-                        );
-                    }
-                    default -> {}
                 }
             }
         }
     }
 
+    @DisplayName("Проверка xlsx в zip")
+    @Test
+    void xlsxInZipFileParsingTest() throws Exception {
+        try (ZipInputStream zis = new ZipInputStream(
+                cl.getResourceAsStream("archive.zip")
+        )) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName() == "archive/продуктовые запасы.xlsx") {
+                        XLS xls = new XLS(zis);
+                        String actualValue = xls.excel.getSheetAt(0).getRow(7).getCell(5).getStringCellValue();
+                        assertTrue(actualValue.contains("Уксусы и соусы"));
+                }
+            }
+        }
+    }
+
+    @DisplayName("Проверка csv в zip")
+    @Test
+    void csvInZipFileParsingTest() throws Exception {
+        try (ZipInputStream zis = new ZipInputStream(
+                cl.getResourceAsStream("archive.zip")
+        )) {
+            ZipEntry entry;
+
+            while ((entry = zis.getNextEntry()) != null) {
+                if (entry.getName() == "archive/Книга1.csv") {
+                    CSVReader csvReader = new CSVReader(new InputStreamReader(zis));
+                    List<String[]> data = csvReader.readAll();
+                    assertEquals(2, data.size());
+                    Assertions.assertArrayEquals(
+                            new String[]{"42-44", " 280р"}, //не обрезает всякие пробелы
+                            data.get(0)
+                    );
+                    Assertions.assertArrayEquals(
+                            new String[]{"44-46", " 320р"},
+                            data.get(1)
+                    );
+                }
+            }
+        }
+    }
+
+    @DisplayName("Проверка json файла")
     @Test
     void jsonParcingTest() throws Exception {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("cat.json")) {
