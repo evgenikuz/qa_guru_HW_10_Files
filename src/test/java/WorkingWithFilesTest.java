@@ -1,15 +1,18 @@
 import com.codeborne.pdftest.PDF;
 import com.codeborne.xlstest.XLS;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
+import model.Cat;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class WorkingWithFilesTest {
     private ClassLoader cl = WorkingWithFilesTest.class.getClassLoader();
@@ -25,19 +28,19 @@ public class WorkingWithFilesTest {
                 switch (entry.getName()) {
                     case "archive/Presentation.pdf" -> {
                         PDF pdf = new PDF(zis);
-                        Assertions.assertEquals("Keynote", pdf.creator);
-                        Assertions.assertEquals(7, pdf.numberOfPages);
-                        Assertions.assertEquals("Presentation 5", pdf.title);
+                        assertEquals("Keynote", pdf.creator);
+                        assertEquals(7, pdf.numberOfPages);
+                        assertEquals("Presentation 5", pdf.title);
                     }
                     case "archive/продуктовые запасы.xlsx" -> {
                         XLS xls = new XLS(zis);
                         String actualValue = xls.excel.getSheetAt(0).getRow(7).getCell(5).getStringCellValue();
-                        Assertions.assertTrue(actualValue.contains("Уксусы и соусы"));
+                        assertTrue(actualValue.contains("Уксусы и соусы"));
                     }
                     case "archive/Книга1.csv" -> {
                         CSVReader csvReader = new CSVReader(new InputStreamReader(zis));
                         List<String[]> data = csvReader.readAll();
-                        Assertions.assertEquals(2, data.size());
+                        assertEquals(2, data.size());
                         Assertions.assertArrayEquals(
                                 new String[]{"42-44", " 280р"}, //не обрезает всякие пробелы
                                 data.get(0)
@@ -51,6 +54,33 @@ public class WorkingWithFilesTest {
                 }
             }
         }
+    }
+
+    @Test
+    void jsonParcingTest() throws Exception {
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("cat.json")) {
+
+            ObjectMapper mapper = new ObjectMapper();
+            Cat cat = mapper.readValue(is, Cat.class);
+
+            assertEquals("Пушистик", cat.getName());
+            assertEquals(5, cat.getAge());
+            assertTrue(cat.isHasLongTail());
+            assertFalse(cat.isHasLongFur());
+            assertEquals(24, cat.getWhiskersAmount());
+
+            assertEquals("зеленые", cat.getColors().getEyes());
+            assertEquals("рыжий", cat.getColors().getFur());
+            assertEquals("белый", cat.getColors().getBelly());
+            assertEquals("розовый", cat.getColors().getPaws());
+            assertEquals("розовый", cat.getColors().getNose());
+
+            assertArrayEquals(
+                    new String[]{"лежать", "играть", "смотреть в окно", "бегать", "охотиться", "мурлыкать"},
+                    cat.getHobbies()
+            );
+        }
+
     }
 }
 
